@@ -209,7 +209,7 @@ int truth_table_compare(const bool *state, const bool * const *truth_table, int 
     return -1;
 }
 
-void compute_and_send_time(Picture *p, const struct digit *digits) {
+int32_t compute_time(Picture *p, const struct digit *digits) {
     int i, j;
     uint16_t ythresh = 700;
     bool states[7];
@@ -231,7 +231,7 @@ void compute_and_send_time(Picture *p, const struct digit *digits) {
 
         if (digit_values[i] == -1) {
             fprintf(stderr, "warning: could not decode digit %d", i);
-            return;
+            return -1;
         }
 
         if (digit_values[i] == 10) {
@@ -265,12 +265,56 @@ void compute_and_send_time(Picture *p, const struct digit *digits) {
     } else {
         fprintf(stderr, "(:%02d.%d)\n", clock / 10, clock % 10);
     }
+
+    return clock;
 }
+
+class Destination {
+    public:
+        Destination( ) { }
+        virtual ~Destination( ) { }
+        virtual void send(int32_t clock) { }
+};
+
+class MulticastDestination : public Destination {
+    /* a simple destination for the clock data, using sockets */
+    public:
+        MulticastDestination( ) {
+            /* Winsock crap goes here! */
+
+            socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
+            if (socket_fd == -1) {
+                throw std::runtime_error("socket() failed");
+            }
+
+            memset(&dest, 0, sizeof(dest));
+            
+            dest.sin_family = AF_INET;
+            dest.sin_port = htons(30004);
+            inet_aton("239.160.181.93", &dest.sin_addr);
+        }
+
+        ~MulticastDestination( ) {
+            close(socket_fd);
+        }
+
+        virtual void send(int32_t clock) {
+            clock = htonl(clock);
+            sendto(socket_fd, &clock, sizeof(clock), 0, 
+                    (struct sockaddr *)&dest, sizeof(dest));
+        }
+
+    protected:
+        int socket_fd;
+        struct sockaddr_in dest;
+};
 
 int main(void) {
     SDL_Surface *screen;
     SDL_Surface *frame_buf;
     SDL_Event evt;
+    MulticastDestination dest;
+
     Picture *in_frame;
     Picture *png = Picture::from_png("hockey_clock.png");
     fixed_png = png->convert_to_format(RGB8);
@@ -314,7 +358,7 @@ int main(void) {
 
         if (mode == RUNNING) {
             /* do processing */
-            compute_and_send_time(in_frame, digits);
+            dest.send(compute_time(in_frame, digits));
         } else if (mode == SETUP_DIGITS) {
             /* overlay the segment positions selected */
             overlay_segments(frame_buf, &digits[digit_being_initialized]);
