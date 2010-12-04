@@ -113,6 +113,9 @@ Picture *Picture::to_rgb8(void) {
         case UYVY8:
             return uyvy8_to_rgb8( );
 
+        case BGRA8:
+            return bgra8_to_rgb8( );
+
         default:
             throw std::runtime_error("Cannot convert this format to RGB8");
     }
@@ -207,6 +210,32 @@ Picture *Picture::rgb8_to_uyvy8(void) {
     }
     
     return out;
+}
+
+Picture *Picture::bgra8_to_rgb8(void) {
+    int i, j;
+    uint8_t r, g, b, a;
+
+    Picture *out = Picture::alloc(this->w, this->h, 3*this->w, RGB8);
+    uint8_t *pix_ptr, *out_ptr;
+
+    for (i = 0; i < this->h; i++) {
+        pix_ptr = this->scanline(i);
+        out_ptr = out->scanline(i);
+        for (j = 0; j < this->w; j++) {            
+            b = *pix_ptr++;
+            g = *pix_ptr++;
+            r = *pix_ptr++;
+            a = *pix_ptr++;
+
+            *out_ptr++ = r;
+            *out_ptr++ = g;
+            *out_ptr++ = b;
+        }
+    }
+    
+    return out;
+
 }
 
 Picture *Picture::bgra8_to_yuva8(void) {

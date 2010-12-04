@@ -179,8 +179,12 @@ uint8_t boxavg_y(Picture *p, const struct point *pt) {
             }
         }
     }    
-
-    return (uint8_t) ysum / n;
+    
+    if (n > 0) {
+        return (uint8_t) ysum / n;
+    } else {
+        return 0;
+    }
 }
 
 int truth_table_compare(const bool *state, const bool * const *truth_table, int bits, int n) {
@@ -276,6 +280,8 @@ int main(void) {
     enum { RUNNING, SETUP_DIGITS } mode;
 
     struct digit digits[N_DIGITS];
+
+    memset(digits, 0, sizeof(digits));
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_NOPARACHUTE) != 0) {
         fprintf(stderr, "Failed to initialize SDL!\n");

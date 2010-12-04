@@ -66,6 +66,7 @@ class Picture {
         Picture *yuv8_to_uyvy8(void);
         Picture *uyvy8_to_yuv8(void);
         Picture *bgra8_to_yuva8(void);
+        Picture *bgra8_to_rgb8(void);
 
         static std::list<Picture *> free_list;
 
