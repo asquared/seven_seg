@@ -64,19 +64,24 @@ const struct color seg_colors[] = {
     { 0, 255, 255 }, /* violet (7) */
 };
 
-const bool seg_truth_table[][7] = {
-    { false, true, true, true, true, true, true }, /* "0" */
-    { false, false, false, true, true, false, false }, /* "1" */
-    { true, true, true, false, true, true, false }, /* "2" */
-    { true, false, true, true, true, true, false }, /* "3" */
-    { true, false, false, true, true, false, true }, /* "4" */
-    { true, false, true, true, false, true, true }, /* "5" */
-    { true, true, true, true, false, true, true }, /* "6" */
-    { false, false, false, true, true, true, false }, /* "7" */
-    { true, true, true, true, true, true, true }, /* "8" */
-    { true, false, true, true, true, true, true }, /* "9" */
-    /* an all-dead digit #0 means to interpret 1-3 as :ss.t */
-    { false, false, false, false, false, false, false }, 
+
+const bool truth0[] = { false, true, true, true, true, true, true };
+const bool truth1[] = { false, false, false, true, true, false, false };
+const bool truth2[] = { true, true, true, false, true, true, false };
+const bool truth3[] = { true, false, true, true, true, true, false };
+const bool truth4[] = { true, false, false, true, true, false, true };
+const bool truth5[] = { true, false, true, true, false, true, true };
+const bool truth6[] = { true, true, true, true, false, true, true };
+const bool truth7[] = { false, false, false, true, true, true, false };
+const bool truth8[] = { true, true, true, true, true, true, true };
+const bool truth9[] = { true, false, true, true, true, true, true };
+/* an all-dead digit #0 means to interpret 1-3 as :ss.t */
+const bool truth_dead[] = { false, false, false, false, false, false, false };
+
+const bool *const seg_truth_table[] = {
+    truth0, truth1, truth2, truth3, truth4,
+    truth5, truth6, truth7, truth8, truth9,
+    truth_dead
 };
 
 Picture *read_image(void) {
@@ -227,8 +232,8 @@ void compute_and_send_time(Picture *p, const struct digit *digits) {
             }
         }
 
-        digit_values[i] = truth_table_compare(states, 
-                (const bool * const *) seg_truth_table, 7, 11);
+        digit_values[i] = truth_table_compare(states, seg_truth_table, 7, 11);
+
         if (digit_values[i] == -1) {
             fprintf(stderr, "warning: could not decode digit %d", i);
             return;
