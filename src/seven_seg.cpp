@@ -315,6 +315,8 @@ int main(void) {
         /* draw frame on screen */
         blit_picture_to_sdl(in_frame, frame_buf);
 
+        Picture::free(in_frame);
+
         if (mode == RUNNING) {
             /* do processing */
             compute_and_send_time(in_frame, digits);
