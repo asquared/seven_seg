@@ -254,8 +254,8 @@ void compute_and_send_time(Picture *p, const struct digit *digits) {
         clock = 
             digit_values[3] * 6000 
             + digit_values[2] * 600 
-            + digit_values[3] * 100 
-            + digit_values[4] * 10;
+            + digit_values[1] * 100 
+            + digit_values[0] * 10;
     }
 
     /* send via socket (eventually) */
