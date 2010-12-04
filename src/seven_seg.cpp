@@ -274,6 +274,7 @@ void compute_and_send_time(Picture *p, const struct digit *digits) {
 
 int main(void) {
     SDL_Surface *screen;
+    SDL_Surface *frame_buf;
     SDL_Event evt;
     Picture *in_frame;
     Picture *png = Picture::from_png("hockey_clock.png");
@@ -300,23 +301,31 @@ int main(void) {
         return 1;
     }
 
+    frame_buf = SDL_CreateRGBSurface(SDL_HWSURFACE, 320, 240, 24, 0xff, 0xff00, 0xff0000, 0);
+    if (!frame_buf) {
+        fprintf(stderr, "Failed to create frame buffer!\n");
+        SDL_Quit( );
+        return 1;
+    }
+
     for (;;) {
         /* read frame */
         in_frame = read_image( );
     
         /* draw frame on screen */
-        blit_picture_to_sdl(in_frame, screen);
+        blit_picture_to_sdl(in_frame, frame_buf);
 
         if (mode == RUNNING) {
             /* do processing */
             compute_and_send_time(in_frame, digits);
         } else if (mode == SETUP_DIGITS) {
             /* overlay the segment positions selected */
-            overlay_segments(screen, &digits[digit_being_initialized]);
-            draw_box(screen, 2, 317, &seg_colors[segment_being_initialized]);
-            draw_box(screen, 7, 317, &seg_colors[segment_being_initialized]);
+            overlay_segments(frame_buf, &digits[digit_being_initialized]);
+            draw_box(frame_buf, 2, 317, &seg_colors[segment_being_initialized]);
+            draw_box(frame_buf, 7, 317, &seg_colors[segment_being_initialized]);
         }
 
+        SDL_BlitSurface(frame_buf, NULL, screen, NULL);
         SDL_Flip(screen);
 
         if (SDL_PollEvent(&evt)) {
