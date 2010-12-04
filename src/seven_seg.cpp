@@ -172,24 +172,19 @@ uint8_t getpixel_y(Picture *p, unsigned int x, unsigned int y) {
     return (y1 >> 2);
 }
 
-uint8_t boxavg_y(Picture *p, const struct point *pt) {
-    int x, y, n = 0;
+uint16_t boxsum_y(Picture *p, const struct point *pt) {
+    int x, y;
     uint16_t ysum = 0;
 
     for (x = pt->x - 2; x <= pt->x + 2; ++x) {
         for (y = pt->y - 2; y <= pt->y + 2; ++y) {
             if (x > 0 && y > 0 && x < p->w && y < p->h) {
                 ysum += getpixel_y(p, x, y);
-                n++;
             }
         }
     }    
     
-    if (n > 0) {
-        return (uint8_t) ysum / n;
-    } else {
-        return 0;
-    }
+    return ysum;
 }
 
 int truth_table_compare(const bool *state, const bool * const *truth_table, int bits, int n) {
@@ -216,7 +211,7 @@ int truth_table_compare(const bool *state, const bool * const *truth_table, int 
 
 void compute_and_send_time(Picture *p, const struct digit *digits) {
     int i, j;
-    uint8_t ythresh = 64;
+    uint16_t ythresh = 700;
     bool states[7];
     int digit_values[N_DIGITS];
     /* seconds/seconds/tenths instead of minutes/minutes/seconds/seconds */
@@ -225,7 +220,7 @@ void compute_and_send_time(Picture *p, const struct digit *digits) {
 
     for (i = 0; i < N_DIGITS; ++i) {
         for (j = 0; j < 7; ++j) {
-            if (boxavg_y(p, &digits[i].segment_pos[j]) > ythresh) {
+            if (boxsum_y(p, &digits[i].segment_pos[j]) > ythresh) {
                 states[j] = true;
             } else {
                 states[j] = false;
