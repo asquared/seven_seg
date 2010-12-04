@@ -30,10 +30,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#include <stdexcept>
 
 #define N_DIGITS 4
 
@@ -41,15 +44,15 @@ Picture *fixed_png;
 
 struct point {
     uint16_t x, y;
-}
+};
 
 struct color {
     uint16_t r, g, b;
-}
+};
 
 struct digit {
     struct point segment_pos[7];
-}
+};
 
 const struct color seg_colors[] = {
     { 102, 51, 51 }, /* brown (1) */
@@ -61,7 +64,7 @@ const struct color seg_colors[] = {
     { 0, 255, 255 }, /* violet (7) */
 };
 
-const bool truth_table[][7] = {
+const bool seg_truth_table[][7] = {
     { false, true, true, true, true, true, true }, /* "0" */
     { false, false, false, true, true, false, false }, /* "1" */
     { true, true, true, false, true, true, false }, /* "2" */
@@ -74,7 +77,7 @@ const bool truth_table[][7] = {
     { true, false, true, true, true, true, true }, /* "9" */
     /* an all-dead digit #0 means to interpret 1-3 as :ss.t */
     { false, false, false, false, false, false, false }, 
-}
+};
 
 Picture *read_image(void) {
     return Picture::copy(fixed_png);
@@ -160,8 +163,8 @@ void overlay_segments(SDL_Surface *surf, const struct digit *d) {
 uint8_t getpixel_y(Picture *p, unsigned int x, unsigned int y) {
     uint8_t *rgb = p->scanline(y) + 3 * x;
     /* crudely estimate y as (r + 2g + b) / 4 */
-    uint16_t y = rgb[0]  + 2 * rgb[1] + rgb[2];
-    return (y >> 2);
+    uint16_t y1 = rgb[0]  + 2 * rgb[1] + rgb[2];
+    return (y1 >> 2);
 }
 
 uint8_t boxavg_y(Picture *p, const struct point *pt) {
@@ -180,7 +183,7 @@ uint8_t boxavg_y(Picture *p, const struct point *pt) {
     return (uint8_t) ysum / n;
 }
 
-int truth_table_compare(const bool *state, const bool *truth_table, int bits, int n) {
+int truth_table_compare(const bool *state, const bool * const *truth_table, int bits, int n) {
     int i, j;
     bool flag;
 
@@ -189,7 +192,7 @@ int truth_table_compare(const bool *state, const bool *truth_table, int bits, in
 
         /* compare each bit */
         for (j = 0; j < bits; ++j) {
-            if (state[i][j] != truth_table[i][j]) {
+            if (state[j] != truth_table[i][j]) {
                 flag = false;
             }
         }
@@ -220,7 +223,8 @@ void compute_and_send_time(Picture *p, const struct digit *digits) {
             }
         }
 
-        digit_values[i] = truth_table_compare(states, seg_truth_table, 7, 11);
+        digit_values[i] = truth_table_compare(states, 
+                (const bool * const *) seg_truth_table, 7, 11);
         if (digit_values[i] == -1) {
             fprintf(stderr, "warning: could not decode digit %d", i);
             return;
@@ -261,6 +265,7 @@ void compute_and_send_time(Picture *p, const struct digit *digits) {
 
 int main(void) {
     SDL_Surface *screen;
+    SDL_Event evt;
     Picture *in_frame;
     Picture *png = Picture::from_png("hockey_clock.png");
     fixed_png = png->convert_to_format(RGB8);
@@ -289,7 +294,7 @@ int main(void) {
         in_frame = read_image( );
     
         /* draw frame on screen */
-        blit_picture_to_sdl(in_frame, screen, 0, 0);
+        blit_picture_to_sdl(in_frame, screen);
 
         if (mode == RUNNING) {
             /* do processing */
@@ -301,7 +306,7 @@ int main(void) {
             draw_box(screen, 7, 317, &seg_colors[segment_being_initialized]);
         }
 
-        if (SDL_PollEvent(&evt))
+        if (SDL_PollEvent(&evt)) {
             if (evt.type == SDL_KEYDOWN) {
                 switch (evt.key.keysym.sym) {
                     /* keyboard handling */
@@ -328,10 +333,10 @@ int main(void) {
                 if (mode == SETUP_DIGITS) {
                     digits[digit_being_initialized]
                         .segment_pos[segment_being_initialized].x 
-                        = event.button.x;
+                        = evt.button.x;
                     digits[digit_being_initialized]
                         .segment_pos[segment_being_initialized].y 
-                        = event.button.y;
+                        = evt.button.y;
 
                     segment_being_initialized++;
 
