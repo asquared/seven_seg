@@ -278,11 +278,11 @@ int main(void) {
     Picture *in_frame;
     Picture *png = Picture::from_png("hockey_clock.png");
     fixed_png = png->convert_to_format(RGB8);
-    Picture::free(fixed_png);
+    Picture::free(png);
 
     unsigned int digit_being_initialized = 0;
     unsigned int segment_being_initialized = 0;
-    enum { RUNNING, SETUP_DIGITS } mode;
+    enum { RUNNING, SETUP_DIGITS } mode = SETUP_DIGITS;
 
     struct digit digits[N_DIGITS];
 
@@ -317,10 +317,15 @@ int main(void) {
             draw_box(screen, 7, 317, &seg_colors[segment_being_initialized]);
         }
 
+        SDL_Flip(screen);
+
         if (SDL_PollEvent(&evt)) {
             if (evt.type == SDL_KEYDOWN) {
                 switch (evt.key.keysym.sym) {
                     /* keyboard handling */
+                    case SDLK_ESCAPE:
+                        goto end;
+
                     case SDLK_s:
                         digit_being_initialized = 0;
                         segment_being_initialized = 0;
@@ -361,6 +366,7 @@ int main(void) {
                 
     }
 
+end:
     SDL_FreeSurface(screen);
     SDL_Quit( );
 }
