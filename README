@@ -1,0 +1,44 @@
+seven_seg - a simple way to decode numbers from a 7-segment display image
+
+Copyright (C) 2010 Andrew H. Armenia.
+
+This program is free software; you are free to distribute copies under
+the terms of the GNU General Public License, version 3. Please see
+the file COPYING for a copy of that license.
+
+The purpose of this program is in broadcasting of sporting events. It
+will eventually be usable to match the graphical scoreboard used in the 
+broadcast to the venue's official scoreboard. This will occur without 
+need for any manual intervention.
+
+Build dependencies include cairo (for now) and pangocairo 
+(due to some dependencies in code borrowed from openreplay).
+SDL is also used for the GUI. To build, just run "make."
+
+Currently, video input is not actually supported. So the image is read from
+a hard-coded file ("hockey_scoreboard.png").
+
+This program must be run in an environment supported by SDL. Once the program
+has been started, a window should appear. Press "s" to enter setup mode.
+To set up the decoder, markers must be placed on each segment of the four
+digits of the display. Begin with the rightmost (least significant) digit.
+Click the center horizontal segment first. Then move left and down to click
+on the bottom-left vertical segment. From there, proceed in a counterclockwise
+fashion, marking each segment of the display.
+
+Press "n" to advance to the "n"ext digit. Mark all of its segments in the same
+fashion. Once all segments are marked, you're ready to start. Press "r" for 
+"r"un. This will begin the actual decoding process. The decoded data will be
+transmitted via UDPv4 multicast to 239.160.181.93 port 30004. The setup mode
+can be re-entered at any time by pressing the "s" key again.
+
+The UDP protocol is dirt simple: just a signed 32-bit integer, in network
+byte order, transmitted via UDP. This is obviously highly insecure, so
+production systems using this network protocol should be firewalled 
+externally.
+
+The author has developed patches to the scoreboard-display program HockeyBoard
+(http://sourceforge.net/projects/hockeyboard) to enable it to receive clock
+synchronization information via the UDP socket. A patched version may be
+released once the author of HockeyBoard provides additional license details.
+
